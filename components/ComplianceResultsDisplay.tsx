@@ -1,8 +1,11 @@
 import React from 'react';
 import GlassyCard from './GlassyCard';
+// FIXED: Import the correct type for your compliance data
+import { AnalysisResult } from '@/lib/types';
 
 interface ComplianceResultsDisplayProps {
-  results: any | null; 
+  // FIXED: Replaced 'any' with the specific 'AnalysisResult' type
+  results: AnalysisResult | null; 
 }
 
 const ComplianceResultsDisplay: React.FC<ComplianceResultsDisplayProps> = ({ results }) => {
@@ -18,4 +21,3 @@ const ComplianceResultsDisplay: React.FC<ComplianceResultsDisplayProps> = ({ res
 };
 
 export default ComplianceResultsDisplay;
-

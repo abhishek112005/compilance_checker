@@ -1,35 +1,37 @@
 import React, { useState } from 'react';
 import ComplianceInputForm from './ComplianceInputForm';
 import ComplianceResultsDisplay from './ComplianceResultsDisplay';
+// Assuming your App.css is in the parent directory or configured in your bundler
 import '../App.css'; 
+// FIXED: Import the correct type for your compliance data
+import { AnalysisResult } from '@/lib/types';
 
 const ComplianceCheckerApp: React.FC = () => {
-  const [complianceResults, setComplianceResults] = useState<any | null>(null);
+  // FIXED: Replaced 'any' with the specific 'AnalysisResult' type
+  const [complianceResults, setComplianceResults] = useState<AnalysisResult | null>(null);
 
   const handleComplianceCheck = (apiJson: string, ocrText: string) => {
     console.log("API JSON Data:", apiJson);
     console.log("OCR Extracted Text:", ocrText);
 
-    // TODO: Implement the actual compliance checking logic here
-    // This is where you would parse the API JSON and OCR text,
-    // extract mandatory fields, compare, and determine compliance status.
-    // For now, let's just set a dummy result.
-    const dummyResults = {
-      "Compliance_Status": "Non-Compliant",
-      "Missing_Fields": ["Manufacturer_Importer", "Expiry_Date"],
-      "Extracted_Values": {
-        "Manufacturer_Importer": null,
-        "Net_Quantity": "1000 ml",
-        "Manufacturing_Date": "2025-09-11",
-        "Expiry_Date": null,
-        "MRP": "Rs. 296",
-        "Seller_Details": "XYZ Retailers Pvt Ltd",
-        "Customer_Care": "1800-123-4567",
-        "API_Title": "FORTUNE SOYA BEAN OIL PACK OF 1 Soyabean Oil Pouch (1000 ml)",
-        "API_Description": "Fortune soya bean oil",
-        "API_Created_At": "2025-09-11T06:12:52.400Z"
-      },
-      "OCR_Extracted_Text": ocrText
+    // This is where your real API call would go.
+    // For now, we'll use a dummy result that matches the AnalysisResult type.
+    const dummyResults: AnalysisResult = {
+      "Compliance Status": "Partially Compliant",
+      "Compliance Score": 71,
+      "Missing Fields": ["Expiry Date", "Seller Details"],
+      "Extracted Values": {
+        "Manufacturer/Importer": "Das Superfoods Pvt. Ltd.",
+        "Net Quantity": "500 g",
+        "Manufacturing Date": "01/2024",
+        "Expiry Date": null,
+        "MRP": "₹275.00",
+        "Seller Details": null,
+        "Customer Care": "support@pintola.in",
+        "API Title": "Pintola All Natural Peanut Butter",
+        "API Description": "A jar of peanut butter.",
+        "API Created_At": "2024-01-01T12:00:00.000Z"
+      }
     };
     setComplianceResults(dummyResults);
   };
@@ -44,4 +46,3 @@ const ComplianceCheckerApp: React.FC = () => {
 };
 
 export default ComplianceCheckerApp;
-

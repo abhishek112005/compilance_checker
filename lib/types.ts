@@ -13,7 +13,8 @@ export interface Product {
     public_id: string;
     url: string;
   }[];
-  [key: string]: any;
+  // FIXED: Replaced 'any' with 'unknown' for better type safety
+  [key: string]: unknown;
 }
 
 export interface ExtractedValues {

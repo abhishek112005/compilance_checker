@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// Corrected the import path for useProducts from "@/hooks/userProducts" to "@/app/hooks/useProducts"
+// FIXED: Corrected the import path for useProducts
 import { useProducts } from "@/hooks/userProducts"; 
 import { Product, AnalysisResult } from "@/lib/types";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -87,8 +87,7 @@ export default function Home() {
         return [...prev, newEntry];
       });
 
-      // --- UPDATED TOAST NOTIFICATIONS TO USE THE NEW SCORING LOGIC ---
-      // This fixes the TypeScript errors and the logical bug.
+      // FIXED: Updated toast notifications to use the correct three-tier status logic
       const score = result["Compliance Score"];
       const status = result["Compliance Status"];
       
@@ -100,8 +99,9 @@ export default function Home() {
         toast.error(`Audit Complete: ${status} (Score: ${score}%)`);
       }
 
-    } catch (err: any) {
-      toast.error(err.message || 'An error occurred during analysis.');
+    } catch (err: unknown) { // FIXED: Replaced 'any' with 'unknown' for type safety
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred during analysis.';
+      toast.error(errorMessage);
     } finally {
       setAnalyzingId(null);
     }

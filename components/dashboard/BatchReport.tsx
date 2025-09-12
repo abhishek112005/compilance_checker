@@ -90,7 +90,8 @@ export function BatchReport({ analyzedProducts }: { analyzedProducts: { product:
             <AlertTriangle className="mx-auto h-12 w-12 text-slate-500" />
             <h3 className="mt-2 text-sm font-semibold text-slate-100">No products audited yet</h3>
             <p className="mt-1 text-sm text-slate-400">
-                Go to the 'Product Inspector' tab to start auditing products.
+                {/* FIXED: Replaced ' with &apos; to fix the ESLint error */}
+                Go to the &apos;Product Inspector&apos; tab to start auditing products.
             </p>
         </div>
     )
@@ -200,7 +201,6 @@ export function BatchReport({ analyzedProducts }: { analyzedProducts: { product:
                         {result["Compliance Score"]}%
                     </TableCell>
                     <TableCell>
-                        {/* FIXED: Using the correct three-tier status for display */}
                         {result["Compliance Status"] === "Fully Compliant" ? (
                             <Badge className="bg-green-900/50 text-green-300 border border-green-500/30">
                                 <CheckCircle2 className="mr-1 h-3 w-3" /> Fully Compliant
