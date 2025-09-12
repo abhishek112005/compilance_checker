@@ -44,3 +44,4 @@ const ComplianceInputForm: React.FC<ComplianceInputFormProps> = ({ onSubmit }) =
 };
 
 export default ComplianceInputForm;
+

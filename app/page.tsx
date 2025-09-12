@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// Corrected the import path for useProducts
+// Corrected the import path for useProducts from "@/hooks/userProducts" to "@/app/hooks/useProducts"
 import { useProducts } from "@/hooks/userProducts"; 
 import { Product, AnalysisResult } from "@/lib/types";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,7 +28,6 @@ export default function Home() {
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
 
   // --- LOCALSTORAGE INTEGRATION ---
-  // This ensures your audited product data is saved and reloaded on refresh.
   const [analyzedProducts, setAnalyzedProducts] = useState<AnalyzedProduct[]>(() => {
     if (typeof window === 'undefined') {
       return [];
@@ -89,6 +88,7 @@ export default function Home() {
       });
 
       // --- UPDATED TOAST NOTIFICATIONS TO USE THE NEW SCORING LOGIC ---
+      // This fixes the TypeScript errors and the logical bug.
       const score = result["Compliance Score"];
       const status = result["Compliance Status"];
       

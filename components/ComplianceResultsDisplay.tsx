@@ -18,3 +18,4 @@ const ComplianceResultsDisplay: React.FC<ComplianceResultsDisplayProps> = ({ res
 };
 
 export default ComplianceResultsDisplay;
+

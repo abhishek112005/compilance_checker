@@ -44,3 +44,4 @@ const ComplianceCheckerApp: React.FC = () => {
 };
 
 export default ComplianceCheckerApp;
+

@@ -44,13 +44,23 @@ async function generateWithRetry(model: any, prompt: any, maxRetries = 3) {
 export async function POST(req: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: 'Server configuration error: Missing API Key.' }, { status: 500 });
+    return new NextResponse(JSON.stringify({ error: 'Server configuration error: Missing API Key.' }), {
+      status: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
+    });
   }
 
   try {
     const { imageUrl, productData }: { imageUrl: string; productData: Product } = await req.json();
     if (!imageUrl || !productData) {
-      return NextResponse.json({ error: 'Missing imageUrl or productData' }, { status: 400 });
+      return new NextResponse(JSON.stringify({ error: 'Missing imageUrl or productData' }), {
+        status: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*'
+        },
+      });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -112,8 +122,8 @@ export async function POST(req: Request) {
           "Seller Details": "...",
           "Customer Care": "...",
           "API Title": "${productData.name || null}",
-          "API Description": "${productData.description || null}",
-          "API Created_At": "${productData.createdAt || null}"
+          "API Description": "${productData.description || null}"
+         
         }
       }
     `;
@@ -128,11 +138,21 @@ export async function POST(req: Request) {
     }
     const finalReport = JSON.parse(jsonMatch[0]);
 
-    return NextResponse.json(finalReport);
+    return new NextResponse(JSON.stringify(finalReport), {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
+    });
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-    return NextResponse.json({ error: 'Failed to analyze product.', details: errorMessage }, { status: 500 });
+    return new NextResponse(JSON.stringify({ error: 'Failed to analyze product.', details: errorMessage }), {
+      status: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
+    });
   }
 }
 
