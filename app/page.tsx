@@ -1,103 +1,188 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+// Corrected the import path for useProducts
+import { useProducts } from "@/hooks/userProducts"; 
+import { Product, AnalysisResult } from "@/lib/types";
+import { Skeleton } from '@/components/ui/skeleton';
+import { Toaster, toast } from 'sonner';
+import { SideNav } from '@/components/dashboard/SideNav';
+import { BatchReport } from '@/components/dashboard/BatchReport';
+import { ProductCard } from '@/components/dashboard/ProductCard';
+import { ProductDetailModal } from '@/components/dashboard/ProductDetailModal';
+import { motion, AnimatePresence } from 'framer-motion';
+
+type View = 'inspector' | 'batch_report';
+type AnalyzedProduct = {
+    product: Product;
+    result: AnalysisResult;
+}
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const { data: products, error, isLoading } = useProducts();
+  
+  const [view, setView] = useState<View>('inspector'); 
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  // --- LOCALSTORAGE INTEGRATION ---
+  // This ensures your audited product data is saved and reloaded on refresh.
+  const [analyzedProducts, setAnalyzedProducts] = useState<AnalyzedProduct[]>(() => {
+    if (typeof window === 'undefined') {
+      return [];
+    }
+    try {
+      const item = window.localStorage.getItem('analyzedProducts');
+      return item ? JSON.parse(item) : [];
+    } catch (error) {
+      console.error("Error reading from localStorage", error);
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('analyzedProducts', JSON.stringify(analyzedProducts));
+    } catch (error) {
+      console.error("Error writing to localStorage", error);
+    }
+  }, [analyzedProducts]);
+  // --- END OF LOCALSTORAGE INTEGRATION ---
+
+
+  const handleAnalyze = async (product: Product) => {
+    setSelectedProduct(product);
+    setAnalysisResult(null);
+    setIsModalOpen(true);
+    setAnalyzingId(product._id);
+    toast.info(`Auditing ${product.name}...`);
+
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          imageUrl: product.images[0].url,
+          productData: product 
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.details || 'Analysis failed on the server.');
+      }
+      
+      const result: AnalysisResult = await response.json();
+      setAnalysisResult(result);
+
+      setAnalyzedProducts(prev => {
+        const existingIndex = prev.findIndex(p => p.product._id === product._id);
+        const newEntry = { product, result };
+        if (existingIndex > -1) {
+          const updated = [...prev];
+          updated[existingIndex] = newEntry;
+          return updated;
+        }
+        return [...prev, newEntry];
+      });
+
+      // --- UPDATED TOAST NOTIFICATIONS TO USE THE NEW SCORING LOGIC ---
+      const score = result["Compliance Score"];
+      const status = result["Compliance Status"];
+      
+      if (status === "Fully Compliant") {
+        toast.success(`Audit Complete: ${status} (Score: ${score}%)`);
+      } else if (status === "Partially Compliant") {
+        toast.warning(`Audit Complete: ${status} (Score: ${score}%)`);
+      } else {
+        toast.error(`Audit Complete: ${status} (Score: ${score}%)`);
+      }
+
+    } catch (err: any) {
+      toast.error(err.message || 'An error occurred during analysis.');
+    } finally {
+      setAnalyzingId(null);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#1e293b] text-white">
+      <Toaster richColors position="top-right" theme="dark" />
+      <SideNav currentView={view} setView={setView} />
+      
+      <main className="flex-1 relative p-4 sm:p-8 overflow-y-auto flex flex-col">
+        {/* Background subtle grid / pattern */}
+        <div className="absolute inset-0 -z-10 opacity-30 bg-[radial-gradient(circle_at_1px_1px,#38bdf8_1px,transparent_1px)] [background-size:24px_24px]" />
+
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.5 }}
+        >
+          {/* Header with glass effect */}
+          <div className="rounded-2xl border border-blue-400/20 bg-white/5 backdrop-blur-md shadow-lg p-6 mb-8">
+            <h1 className="text-3xl font-extrabold text-slate-100 drop-shadow-lg">
+              {view === 'inspector' ? 'Product Inspector' : 'Batch Compliance Report'}
+            </h1>
+            <p className="text-slate-400 mt-2 text-sm">
+              {view === 'inspector' 
+                ? 'Select a product to begin an AI-powered compliance audit.' 
+                : 'Review the compliance status of all audited products.'}
+            </p>
+          </div>
+        </motion.div>
+        
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={view}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+            {view === 'inspector' && (
+              <div>
+                {isLoading && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <Skeleton key={i} className="h-96 w-full rounded-2xl bg-gray-800/40" />
+                    ))}
+                  </div>
+                )}
+                {error && <p className="text-red-400">Error loading products: {error.message}</p>}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {products?.map((product) => (
+                    <ProductCard
+                      key={product._id}
+                      product={product}
+                      onAnalyze={handleAnalyze}
+                      isAnalyzing={analyzingId === product._id}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {view === 'batch_report' && (
+              <div>
+                <BatchReport analyzedProducts={analyzedProducts} />
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+      <ProductDetailModal
+        isOpen={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        product={selectedProduct}
+        analysisResult={analysisResult}
+        isLoading={!!analyzingId}
+      />
     </div>
   );
 }
+
