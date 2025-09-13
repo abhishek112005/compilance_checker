@@ -10,11 +10,10 @@ import CountUp from "react-countup";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useMemo } from "react";
 
-// --- HELPER FUNCTIONS for data processing based on the NEW logic ---
+// --- HELPER FUNCTIONS ---
 const getCategoryTrends = (analyzedProducts: { product: Product; result: AnalysisResult }[]) => {
     const categoryViolations: { [key: string]: number } = {};
     analyzedProducts.forEach(({ product, result }) => {
-        // A "violation" is any product that is not "Fully Compliant"
         if (result["Compliance Status"] !== "Fully Compliant") {
             const category = product.category || "Uncategorized";
             if (!categoryViolations[category]) {
@@ -28,7 +27,7 @@ const getCategoryTrends = (analyzedProducts: { product: Product; result: Analysi
 
 const getSellerTrends = (analyzedProducts: { product: Product; result: AnalysisResult }[]) => {
     const sellerViolations: { [key: string]: number } = {};
-     analyzedProducts.forEach(({ product, result }) => {
+    analyzedProducts.forEach(({ product, result }) => {
         if (result["Compliance Status"] !== "Fully Compliant") {
             const seller = product.seller || "Unknown Seller";
             if (!sellerViolations[seller]) {
@@ -37,12 +36,11 @@ const getSellerTrends = (analyzedProducts: { product: Product; result: AnalysisR
             sellerViolations[seller]++;
         }
     });
-    // Return top 5 sellers with most violations
     return Object.entries(sellerViolations)
         .map(([name, violations]) => ({ name, violations }))
         .sort((a, b) => b.violations - a.violations)
         .slice(0, 5);
-}
+};
 
 const exportViolationsToCSV = (analyzedProducts: { product: Product; result: AnalysisResult }[]) => {
     let csvContent = "data:text/csv;charset=utf-8,Product Name,Category,Seller,Compliance Score,Compliance Status,Missing Fields\n";
@@ -72,7 +70,6 @@ const exportViolationsToCSV = (analyzedProducts: { product: Product; result: Ana
 
 // --- MAIN COMPONENT ---
 export function BatchReport({ analyzedProducts }: { analyzedProducts: { product: Product; result: AnalysisResult }[] }) {
-    // FIXED: Correctly counting only "Fully Compliant" products
     const fullyCompliantCount = useMemo(() => analyzedProducts.filter(p => p.result["Compliance Status"] === "Fully Compliant").length, [analyzedProducts]);
     
     const averageComplianceScore = useMemo(() => {
@@ -87,10 +84,9 @@ export function BatchReport({ analyzedProducts }: { analyzedProducts: { product:
   if (analyzedProducts.length === 0) {
     return (
         <div className="text-center py-16 glass-card border-red-500/30">
-            <AlertTriangle className="mx-auto h-12 w-12 text-slate-500" />
-            <h3 className="mt-2 text-sm font-semibold text-slate-100">No products audited yet</h3>
+            <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
+            <h3 className="mt-2 text-sm font-semibold text-white">No products audited yet</h3>
             <p className="mt-1 text-sm text-slate-400">
-                {/* FIXED: Replaced ' with &apos; to fix the ESLint error */}
                 Go to the &apos;Product Inspector&apos; tab to start auditing products.
             </p>
         </div>
@@ -101,35 +97,40 @@ export function BatchReport({ analyzedProducts }: { analyzedProducts: { product:
     <div className="space-y-6">
         {/* KPI Cards */}
        <div className="grid gap-4 md:grid-cols-3">
-            <Card className="glass-card">
+            {/* Total Audited */}
+            <Card className="glass-card bg-blue-950/40 border border-blue-700/30">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-slate-300">Total Audited</CardTitle>
-                    <LayoutGrid className="h-4 w-4 text-slate-400" />
+                    <CardTitle className="text-sm font-semibold text-blue-400">Total Audited</CardTitle>
+                    <LayoutGrid className="h-4 w-4 text-cyan-400" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-3xl font-bold text-white">
+                    <div className="text-4xl font-extrabold text-blue-300 drop-shadow-lg">
                         <CountUp end={analyzedProducts.length} duration={1.5} />
                     </div>
                 </CardContent>
             </Card>
-            <Card className="glass-card">
+
+            {/* Fully Compliant */}
+            <Card className="glass-card bg-green-950/40 border border-green-700/30">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-slate-300">Fully Compliant</CardTitle>
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <CardTitle className="text-sm font-semibold text-green-400">Fully Compliant</CardTitle>
+                    <CheckCircle2 className="h-4 w-4 text-green-400" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-3xl font-bold text-white">
+                    <div className="text-4xl font-extrabold text-green-300 drop-shadow-md">
                         <CountUp end={fullyCompliantCount} duration={1.5} />
                     </div>
                 </CardContent>
             </Card>
-            <Card className="glass-card">
+
+            {/* Average Compliance Score */}
+            <Card className="glass-card bg-blue-950/40 border border-blue-700/30">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-slate-300">Average Compliance Score</CardTitle>
-                    <ShieldCheck className="h-4 w-4 text-blue-500" />
+                    <CardTitle className="text-sm font-semibold text-blue-400">Average Compliance Score</CardTitle>
+                    <ShieldCheck className="h-4 w-4 text-blue-400" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-3xl font-bold text-white">
+                    <div className="text-4xl font-extrabold bg-gradient-to-r from-sky-400 to-blue-500 bg-clip-text text-transparent drop-shadow-md">
                         <CountUp end={averageComplianceScore} duration={1.5} decimals={1} suffix="%" />
                     </div>
                 </CardContent>
@@ -210,7 +211,7 @@ export function BatchReport({ analyzedProducts }: { analyzedProducts: { product:
                                 <AlertTriangle className="mr-1 h-3 w-3" /> Partially Compliant
                             </Badge>
                         ) : (
-                            <Badge variant="destructive">
+                            <Badge className="bg-red-900/50 text-red-300 border border-red-500/30">
                                 <XCircle className="mr-1 h-3 w-3" /> Non-Compliant
                             </Badge>
                         )}
@@ -225,4 +226,3 @@ export function BatchReport({ analyzedProducts }: { analyzedProducts: { product:
     </div>
   );
 }
-
